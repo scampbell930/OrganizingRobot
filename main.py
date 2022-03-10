@@ -1,14 +1,14 @@
-from zmqRemoteApi.clients.python.zmqRemoteApi import RemoteAPIClient
-
+import sim
 
 if __name__ == '__main__':
-    # Connect to Coppelia simulation
-    client = RemoteAPIClient()
-    simulation = client.getObject('sim')
-    simulation.stopSimulation()
+    # Close any running sims
+    sim.simxFinish(-1)
 
-    '''
-    Simulation code gets called here
-    '''
+    # Connect to Coppelia client
+    clientID = sim.simxStart('127.0.0.1', 19999, True, True, 5000, 5)
 
-    sim = simulation.startSimulation()
+    # Check connection
+    if clientID != -1:
+        print("Connected to remote API server")
+    else:
+        print("Not connected to remote API server")
