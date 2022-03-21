@@ -1,5 +1,6 @@
 import sim
 
+
 if __name__ == '__main__':
     # Close any running sims
     sim.simxFinish(-1)
