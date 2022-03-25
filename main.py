@@ -2,13 +2,51 @@ import sim
 import numpy as np
 import imutils
 import cv2
-import matplotlib.pyplot as plt
 import time
-from PIL import Image
-import array
+import os
+
+
+def track(image):
+
+    blur = cv2.GaussianBlur(image, (5, 5), 0)
+
+    # Convert image to HSV colors
+    image_hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
+
+    # Define blue color range
+    lower_blue = np.array([110, 50, 50])
+    upper_blue = np.array([130, 255, 255])
+
+    # Mask out everything besides blue
+    mask = cv2.inRange(image_hsv, lower_blue, upper_blue)
+
+    # Blur the mask
+    blue_mask = cv2.GaussianBlur(mask, (5, 5), 0)
+
+    # Find blue objects
+    moments = cv2.moments(blue_mask)
+    m00 = moments['m00']
+    centroid_x, centroid_y = None, None
+    if m00 != 0:
+        centroid_x = int(moments['m10']/m00)
+        centroid_y = int(moments['m01']/m00)
+
+    # Object coordinates
+    coord = (-1, -1)
+
+    # Check if object was found
+    if centroid_x is not None and centroid_y is not None:
+        coord = (centroid_x, centroid_y)
+
+    # Return coordinates of object
+    return coord
 
 
 def streamVisionSensor(sensor, clientID):
+    # Load classifiers
+    blue_classifier = cv2.CascadeClassifier('Blue_Classifier/classify/cascade.xml')
+    red_classifier = cv2.CascadeClassifier('Red_Classifier/classify/cascade.xml')
+
     if clientID != -1:
         err, vision_handle = sim.simxGetObjectHandle(clientID, sensor, sim.simx_opmode_oneshot_wait)
         err, resolution, image = sim.simxGetVisionSensorImage(clientID, vision_handle, 0, sim.simx_opmode_streaming)
@@ -30,6 +68,23 @@ def streamVisionSensor(sensor, clientID):
                 cv2.startWindowThread()
                 cv2.namedWindow("image")
                 cv2.imshow('image', img_rgb)
+
+                blue_image = img_rgb.copy()
+                red_image = img_rgb.copy()
+
+                # Load image into classifiers
+                blue_output = blue_classifier.detectMultiScale(blue_image)
+                red_output = red_classifier.detectMultiScale(red_image)
+
+                # Draw rectangles on image
+                for (x, y, w, h) in blue_output:
+                    cv2.rectangle(blue_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+                for (x, y, w, h) in red_output:
+                    cv2.rectangle(red_image, (x, y), (x+w, y+h), (0, 255, 0), 1)
+
+                cv2.imshow('Blue output', blue_image)
+                cv2.imshow('Red output', red_image)
 
                 # Used for saving images and quitting
                 key = cv2.waitKey(1)
@@ -54,6 +109,13 @@ def streamVisionSensor(sensor, clientID):
 
 
 if __name__ == '__main__':
+    '''
+    # Used for creating neg_images.txt file
+    with open('Blue_Classifier/neg_images.txt', 'w') as f:
+        for filename in os.listdir('Blue_Classifier/negative'):
+            f.write('negative/' + filename + '\n')
+    '''
+
     # Close any running sims
     sim.simxFinish(-1)
 
@@ -74,10 +136,10 @@ if __name__ == '__main__':
     err, wheelJoints[2] = sim.simxGetObjectHandle(clientID, "rollingJoint_rr", sim.simx_opmode_blocking)
     err, wheelJoints[3] = sim.simxGetObjectHandle(clientID, "rollingJoint_fr", sim.simx_opmode_blocking)
 
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[0], -0.5, sim.simx_opmode_oneshot)
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[1], -0.5, sim.simx_opmode_oneshot)
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[2], 0.5, sim.simx_opmode_oneshot)
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[3], 0.5, sim.simx_opmode_oneshot)
+    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[0], 0, sim.simx_opmode_oneshot)
+    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[1], 0, sim.simx_opmode_oneshot)
+    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[2], 0, sim.simx_opmode_oneshot)
+    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[3], 0, sim.simx_opmode_oneshot)
 
     streamVisionSensor("Vision_sensor", clientID)
     print("done")
