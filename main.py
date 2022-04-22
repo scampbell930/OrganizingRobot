@@ -93,9 +93,9 @@ def streamVisionSensor(sensor, clientID):
                 if key == ord('q'):
                     break
                 elif key == ord('f'):
-                    cv2.imwrite('positive/{}.jpg'.format(time.time()), img_rgb)
+                    cv2.imwrite('Blue_Classifier/positive_new/{}.jpg'.format(time.time()), img_rgb)
                 elif key == ord('d'):
-                    cv2.imwrite('negative/{}.jpg'.format(time.time()), img_rgb)
+                    cv2.imwrite('Blue_Classifier/negative/{}.jpg'.format(time.time()), img_rgb)
 
             elif err == sim.simx_return_novalue_flag:
                 print("no image yet")
@@ -133,15 +133,15 @@ if __name__ == '__main__':
 
 
     wheelJoints = [-1, -1, -1, -1]
-    err, wheelJoints[0] = sim.simxGetObjectHandle(clientID, "rollingJoint_fl", sim.simx_opmode_blocking)
-    err, wheelJoints[1] = sim.simxGetObjectHandle(clientID, "rollingJoint_rl", sim.simx_opmode_blocking)
-    err, wheelJoints[2] = sim.simxGetObjectHandle(clientID, "rollingJoint_rr", sim.simx_opmode_blocking)
-    err, wheelJoints[3] = sim.simxGetObjectHandle(clientID, "rollingJoint_fr", sim.simx_opmode_blocking)
+    err_code, fr_wheel_handle = sim.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fr", sim.simx_opmode_blocking)
+    err_code, fl_wheel_handle = sim.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fl", sim.simx_opmode_blocking)
+    err_code, rr_wheel_handle = sim.simxGetObjectHandle(clientID, "/youBot/rollingJoint_rr", sim.simx_opmode_blocking)
+    err_code, rl_wheel_handle = sim.simxGetObjectHandle(clientID, "/youBot/rollingJoint_rl", sim.simx_opmode_blocking)
 
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[0], 0, sim.simx_opmode_oneshot)
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[1], 0, sim.simx_opmode_oneshot)
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[2], 0, sim.simx_opmode_oneshot)
-    err = sim.simxSetJointTargetVelocity(clientID, wheelJoints[3], 0, sim.simx_opmode_oneshot)
+    err = sim.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, sim.simx_opmode_streaming)
 
     streamVisionSensor("Vision_sensor", clientID)
     print("done")
