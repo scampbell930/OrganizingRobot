@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib import collections  as mc
 import graph
+from classifier import stream_vision_sensor
 
 
 #Finds closest node for RRT
@@ -91,9 +92,10 @@ def frontier_point_evaluation(paths:list[graph.Node]) -> list[graph.Node]:
             optmized_path = path
     return optmized_path        
 
+
 if __name__ == "__main__":
     vrep.simxFinish(-1) # just in case, close all opened connections
-    clientID=vrep.simxStart('127.0.0.1',19999,True,True,5000,5) 
+    clientID=vrep.simxStart('127.0.0.1',19997,True,True,5000,5)
 
     if clientID != -1:
     
@@ -148,5 +150,10 @@ if __name__ == "__main__":
             
 
             optmized_path = frontier_point_evaluation(paths) #Return optimal path to frontier 
-            move_robot(clientID,reversed(optmized_path))
+            detection = move_robot(clientID,reversed(optmized_path))
+
+            # Start pickup
+            if detection:
+                print("now go pick it up")
+                break
   
