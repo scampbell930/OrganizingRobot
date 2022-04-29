@@ -19,7 +19,7 @@ def verify(clientID, sensor, wheel_handles, detected_obj):
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0, sim.simx_opmode_streaming)
     time.sleep(1)
 
-    if stream_vision_sensor(sensor, clientID)[1] != detected_obj:
+    if stream_vision_sensor(sensor, clientID)[1] != detected_obj[1]:
         return False
 
     # Rotate right and check again
@@ -31,7 +31,7 @@ def verify(clientID, sensor, wheel_handles, detected_obj):
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0, sim.simx_opmode_streaming)
     time.sleep(1)
 
-    if stream_vision_sensor(sensor, clientID)[1] != detected_obj:
+    if stream_vision_sensor(sensor, clientID)[1] != detected_obj[1]:
         return False
 
     return True
@@ -94,14 +94,13 @@ def stream_vision_sensor(sensor, clientID):
             # If any objects are detected return True
             if len(blue_output) != 0 or len(red_output) != 0:
                 if len(blue_output) != 0:
-                    return True, "blue"
+                    return [True, "blue"]
                 else:
-                    return True, "red"
-            return False
+                    return [True, "red"]
+            return [False, ""]
 
         elif err == sim.simx_return_novalue_flag:
             print("no image yet")
-            pass
         else:
             print(err)
 

@@ -17,90 +17,89 @@ def move_robot(clientID, coordinates):
     # Move to each point within the coordinate list
     for coord in coordinates:
         # Check vision sensor for object to detect
-        found, detection = stream_vision_sensor("Vision_sensor", clientID)
+        detection = stream_vision_sensor("Vision_sensor", clientID)
 
-        # Detected an object
-        if found:
-            # Stop moving
-            err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
-            err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
-            err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
-            err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
+        if detection:
+            # Detected an object
+            if detection[0]:
+                # Stop moving
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
 
-            if verify(clientID, "Vision_sensor", [fr_wheel_handle, rr_wheel_handle, fl_wheel_handle, rl_wheel_handle],
-                      detection):
-                return True
+                if verify(clientID, "Vision_sensor", [fr_wheel_handle, rr_wheel_handle, fl_wheel_handle, rl_wheel_handle],
+                          detection):
+                    return True
 
-        else:
+        err_code = vrep.simxSetObjectPosition(clientID, dummy_handle, -1, [coord.x, coord.y, 0.2],
+                                               vrep.simx_opmode_blocking)
+        errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
+        # Create vector from robot postion to dummy position
+        vector_from_points = [(coord.x - robot_position[0]), (coord.y - robot_position[1])]
+        # Calculate angle relative to absolute x-axis
+        vector_angle = math.atan2(vector_from_points[1], vector_from_points[0])
 
-            err_code = vrep.simxSetObjectPosition(clientID, dummy_handle, -1, [coord.x, coord.y, 0.2],
-                                                   vrep.simx_opmode_blocking)
+        errcode, vision_position = vrep.simxGetObjectPosition(clientID, vision_handle, -1, vrep.simx_opmode_blocking)
+
+        robot_vector_from_points = [(vision_position[0] - robot_position[0]), (vision_position[1] - robot_position[1])]
+
+        orientation_angle = math.atan2(robot_vector_from_points[1], robot_vector_from_points[0])
+        errcode, robot_orientation = vrep.simxGetObjectOrientation(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
+        # Calculate difference between robot orientation and vector angle to determine which motor should turn
+
+        if (not (round(vector_angle, 1) - 0.1 <= round(orientation_angle, 1) <= round(vector_angle, 1) + 0.1)):
+            if (vector_angle - orientation_angle >= 0):
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, -1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, -1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 1, vrep.simx_opmode_streaming)
+            else:
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, -1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -1, vrep.simx_opmode_streaming)
+
+        sleep(0.05)
+
+        # Rotate until robot is orientated towards point
+        while True:
+
+            errcode, robot_orientation = vrep.simxGetObjectOrientation(clientID, robot_handle, dummy_handle,
+                                                                        vrep.simx_opmode_blocking)
+
             errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
-            # Create vector from robot postion to dummy position
-            vector_from_points = [(coord.x - robot_position[0]), (coord.y - robot_position[1])]
-            # Calculate angle relative to absolute x-axis
-            vector_angle = math.atan2(vector_from_points[1], vector_from_points[0])
-
             errcode, vision_position = vrep.simxGetObjectPosition(clientID, vision_handle, -1, vrep.simx_opmode_blocking)
+            current_vector_from_points = [(vision_position[0] - robot_position[0]),
+                                           (vision_position[1] - robot_position[1])]
+            angle = math.atan2(current_vector_from_points[1], current_vector_from_points[0])
 
-            robot_vector_from_points = [(vision_position[0] - robot_position[0]), (vision_position[1] - robot_position[1])]
+            if round(vector_angle, 1) - 0.1 <= round(angle, 1) <= round(vector_angle, 1) + 0.1:
+                # sleep(0.5)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
+                sleep(0.05)
+                break
 
-            orientation_angle = math.atan2(robot_vector_from_points[1], robot_vector_from_points[0])
-            errcode, robot_orientation = vrep.simxGetObjectOrientation(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
-            # Calculate difference between robot orientation and vector angle to determine which motor should turn
+        # Move towards point until robot location == point location
+        while True:
+            errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
+            # errcode, dummy_position = vrep.simxGetObjectPosition(clientID, dummy_handle,-1,vrep.simx_opmode_blocking)
 
-            if (not (round(vector_angle, 1) - 0.1 <= round(orientation_angle, 1) <= round(vector_angle, 1) + 0.1)):
-                if (vector_angle - orientation_angle >= 0):
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, -1, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, -1, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 1, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 1, vrep.simx_opmode_streaming)
-                else:
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 1, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 1, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, -1, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -1, vrep.simx_opmode_streaming)
+            if (round(coord.x, 1) - 0.15 <= round(robot_position[0], 1) <= round(coord.x, 1) + 0.15 and
+                    round(coord.y, 1) - 0.15 <= round(robot_position[1], 1) <= round(coord.y, 1) + 0.15):
 
-            sleep(0.05)
-
-            # Rotate until robot is orientated towards point
-            while True:
-
-                errcode, robot_orientation = vrep.simxGetObjectOrientation(clientID, robot_handle, dummy_handle,
-                                                                            vrep.simx_opmode_blocking)
-
-                errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
-                errcode, vision_position = vrep.simxGetObjectPosition(clientID, vision_handle, -1, vrep.simx_opmode_blocking)
-                current_vector_from_points = [(vision_position[0] - robot_position[0]),
-                                               (vision_position[1] - robot_position[1])]
-                angle = math.atan2(current_vector_from_points[1], current_vector_from_points[0])
-
-                if round(vector_angle, 1) - 0.1 <= round(angle, 1) <= round(vector_angle, 1) + 0.1:
-                    # sleep(0.5)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    sleep(0.05)
-                    break
-
-            # Move towards point until robot location == point location
-            while True:
-                errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
-                # errcode, dummy_position = vrep.simxGetObjectPosition(clientID, dummy_handle,-1,vrep.simx_opmode_blocking)
-
-                if (round(coord.x, 1) - 0.15 <= round(robot_position[0], 1) <= round(coord.x, 1) + 0.15 and
-                        round(coord.y, 1) - 0.15 <= round(robot_position[1], 1) <= round(coord.y, 1) + 0.15):
-
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
-                    sleep(0.1)
-                    break
-                else:
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, -3, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, -3, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, -3, vrep.simx_opmode_streaming)
-                    err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -3, vrep.simx_opmode_streaming)
-                    sleep(0.1)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
+                sleep(0.1)
+                break
+            else:
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, -3, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, -3, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, -3, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -3, vrep.simx_opmode_streaming)
+                sleep(0.1)
