@@ -1,4 +1,4 @@
-from classifier import stream_vision_sensor
+from classifier import stream_vision_sensor, verify
 import math
 from random import random
 from time import sleep
@@ -14,10 +14,10 @@ def move_robot(clientID, coordinates):
     err_code,vision_handle = vrep.simxGetObjectHandle(clientID, "/youBot/Vision_sensor", vrep.simx_opmode_blocking)
     err_code,dummy_handle = vrep.simxGetObjectHandle(clientID, "/Cuboid[4]", vrep.simx_opmode_blocking)
  
-    #Move to each point within the coordinate list
+    # Move to each point within the coordinate list
     for coord in coordinates:
         # Check vision sensor for object to detect
-        found = stream_vision_sensor("Vision_sensor", clientID)
+        found, detection = stream_vision_sensor("Vision_sensor", clientID)
 
         # Detected an object
         if found:
@@ -27,7 +27,9 @@ def move_robot(clientID, coordinates):
             err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
             err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
 
-            return True
+            if verify(clientID, "Vision_sensor", [fr_wheel_handle, rr_wheel_handle, fl_wheel_handle, rl_wheel_handle],
+                      detection):
+                return True
 
         else:
 
@@ -60,6 +62,7 @@ def move_robot(clientID, coordinates):
                     err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -1, vrep.simx_opmode_streaming)
 
             sleep(0.05)
+
             # Rotate until robot is orientated towards point
             while True:
 

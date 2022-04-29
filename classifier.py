@@ -6,40 +6,35 @@ import time
 import os
 
 
-def track(image):
+def verify(clientID, sensor, wheel_handles, detected_obj):
+    err, vision_handle = sim.simxGetObjectHandle(clientID, sensor, sim.simx_opmode_oneshot_wait)
+    time.sleep(1)
 
-    blur = cv2.GaussianBlur(image, (5, 5), 0)
+    # Rotate left and check again
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], 0.2, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], -0.2, sim.simx_opmode_streaming)
+    time.sleep(1)
 
-    # Convert image to HSV colors
-    image_hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], 0, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0, sim.simx_opmode_streaming)
+    time.sleep(1)
 
-    # Define blue color range
-    lower_blue = np.array([110, 50, 50])
-    upper_blue = np.array([130, 255, 255])
+    if stream_vision_sensor(sensor, clientID)[1] != detected_obj:
+        return False
 
-    # Mask out everything besides blue
-    mask = cv2.inRange(image_hsv, lower_blue, upper_blue)
+    # Rotate right and check again
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], -0.2, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0.2, sim.simx_opmode_streaming)
+    time.sleep(2)
 
-    # Blur the mask
-    blue_mask = cv2.GaussianBlur(mask, (5, 5), 0)
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], 0, sim.simx_opmode_streaming)
+    err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0, sim.simx_opmode_streaming)
+    time.sleep(1)
 
-    # Find blue objects
-    moments = cv2.moments(blue_mask)
-    m00 = moments['m00']
-    centroid_x, centroid_y = None, None
-    if m00 != 0:
-        centroid_x = int(moments['m10']/m00)
-        centroid_y = int(moments['m01']/m00)
+    if stream_vision_sensor(sensor, clientID)[1] != detected_obj:
+        return False
 
-    # Object coordinates
-    coord = (-1, -1)
-
-    # Check if object was found
-    if centroid_x is not None and centroid_y is not None:
-        coord = (centroid_x, centroid_y)
-
-    # Return coordinates of object
-    return coord
+    return True
 
 
 def stream_vision_sensor(sensor, clientID):
@@ -98,8 +93,10 @@ def stream_vision_sensor(sensor, clientID):
 
             # If any objects are detected return True
             if len(blue_output) != 0 or len(red_output) != 0:
-                return True
-
+                if len(blue_output) != 0:
+                    return True, "blue"
+                else:
+                    return True, "red"
             return False
 
         elif err == sim.simx_return_novalue_flag:
