@@ -1,14 +1,11 @@
 import math
-from random import random, randrange
-from time import sleep
 import numpy as np
-from move_robot import move_robot
+from move_robot import move_robot, move_to_pickup
 import sim as vrep # access all the VREP elements
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
-from matplotlib import collections  as mc
 import graph
-from classifier import stream_vision_sensor
+from pickup import pickup_object
 
 
 #Finds closest node for RRT
@@ -155,5 +152,10 @@ if __name__ == "__main__":
             # Start pickup
             if detection:
                 print("now go pick it up")
+                if detection[1] == "blue":
+                    err, object = vrep.simxGetObjectHandle(clientID, "blue_cube", vrep.simx_opmode_blocking)
+                    err, object_pos = vrep.simxGetObjectPosition(clientID, object, -1, vrep.simx_opmode_oneshot)
+                    move_to_pickup(clientID, detection)
+                    pickup_object(clientID)
                 break
   

@@ -13,11 +13,11 @@ def verify(clientID, sensor, wheel_handles, detected_obj):
     # Rotate left and check again
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], 0.2, sim.simx_opmode_streaming)
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], -0.2, sim.simx_opmode_streaming)
-    time.sleep(1)
+    time.sleep(0.5)
 
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], 0, sim.simx_opmode_streaming)
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0, sim.simx_opmode_streaming)
-    time.sleep(1)
+    time.sleep(0.5)
 
     if stream_vision_sensor(sensor, clientID)[1] != detected_obj[1]:
         return False
@@ -25,11 +25,11 @@ def verify(clientID, sensor, wheel_handles, detected_obj):
     # Rotate right and check again
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], -0.2, sim.simx_opmode_streaming)
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0.2, sim.simx_opmode_streaming)
-    time.sleep(2)
+    time.sleep(1)
 
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[0], 0, sim.simx_opmode_streaming)
     err = sim.simxSetJointTargetVelocity(clientID, wheel_handles[3], 0, sim.simx_opmode_streaming)
-    time.sleep(1)
+    time.sleep(0.5)
 
     if stream_vision_sensor(sensor, clientID)[1] != detected_obj[1]:
         return False
