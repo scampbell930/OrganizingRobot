@@ -47,6 +47,10 @@ def stream_vision_sensor(sensor, clientID):
         err, resolution, image = sim.simxGetVisionSensorImage(clientID, vision_handle, 0, sim.simx_opmode_streaming)
 
         err, resolution, image = sim.simxGetVisionSensorImage(clientID, vision_handle, 0, sim.simx_opmode_buffer)
+
+        while err == sim.simx_return_novalue_flag:
+            err, resolution, image = sim.simxGetVisionSensorImage(clientID, vision_handle, 0, sim.simx_opmode_buffer)
+
         if err == sim.simx_return_ok:
             print("Displaying Vision Sensor")
 
@@ -77,7 +81,7 @@ def stream_vision_sensor(sensor, clientID):
 
             for (x, y, w, h) in red_output:
                 cv2.rectangle(annotate_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                cv2.putText(annotate_image, 'red cube', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
+                cv2.putText(annotate_image, 'red cylinder', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
 
             cv2.imshow('Detection Output', annotate_image)
             # cv2.imshow('Red output', red_image)

@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     if clientID != -1:
     
-        err_code,dummy_handle = vrep.simxGetObjectHandle(clientID, "/Cuboid[4]", vrep.simx_opmode_blocking) 
+        err_code,dummy_handle = vrep.simxGetObjectHandle(clientID, "/test_cube", vrep.simx_opmode_blocking)
         err_code,robot_handle = vrep.simxGetObjectHandle(clientID, "/youBot", vrep.simx_opmode_blocking)
         err_code,fr_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fr", vrep.simx_opmode_blocking)
         err_code,fl_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fl", vrep.simx_opmode_blocking)
@@ -153,9 +153,10 @@ if __name__ == "__main__":
             if detection:
                 print("now go pick it up")
                 if detection[1] == "blue":
-                    err, object = vrep.simxGetObjectHandle(clientID, "blue_cube", vrep.simx_opmode_blocking)
-                    err, object_pos = vrep.simxGetObjectPosition(clientID, object, -1, vrep.simx_opmode_oneshot)
                     move_to_pickup(clientID, detection)
                     pickup_object(clientID)
-                break
+
+                else:
+                    move_to_pickup(clientID, detection)
+                    pickup_object(clientID)
   
