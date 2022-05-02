@@ -64,8 +64,6 @@ def stream_vision_sensor(sensor, clientID):
             # Show image and convert to RGB
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.startWindowThread()
-            cv2.namedWindow("image")
-            cv2.imshow('image', img_rgb)
 
             annotate_image = img_rgb.copy()
             red_image = img_rgb.copy()

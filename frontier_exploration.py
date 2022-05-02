@@ -1,13 +1,16 @@
 import math
+from pydoc import cli
 import numpy as np
 from move_robot import move_robot, move_to_pickup
 import sim as vrep # access all the VREP elements
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import graph
-from pickup import pickup_object
+from pickup import pickup_object, drop_object, grip_object
+import Dijkstra
 
-
+BLUE_PLATFORM = 113
+RED_PLATFORM = 112
 
 #Finds closest node for RRT
 def find_closest_node(point: list[float], nodes: list[graph.Node]) -> graph.Node:
@@ -58,7 +61,7 @@ def find_frontier_points() -> list[graph.Node]:
        err_code = vrep.simxSetObjectPosition(clientID,dummy_handle,-1,[new_node_x,new_node_y,0.2], vrep.simx_opmode_blocking )
        collision = check_for_object()
 
-       new_node = graph.Node(new_node_x,new_node_y, not collision) #New Node to RRT
+       new_node = graph.Node(new_node_x,new_node_y, not collision, 0) #New Node to RRT
        in_known = False
 
        for region in known_region:  
@@ -69,7 +72,7 @@ def find_frontier_points() -> list[graph.Node]:
         frontier_nodes.append(new_node)
 
        g.nodes.append(new_node)
-       e = graph.Edge(closest_node,new_node) #Create edge from closest node to new node
+       e = graph.Edge(closest_node,new_node,0) #Create edge from closest node to new node
        g.edges.append(e)
        break
  return frontier_nodes 
@@ -126,7 +129,7 @@ if __name__ == "__main__":
             #Initialize Graph and append starting node to nodes list   
             g = graph.Graph()
             err,position = vrep.simxGetObjectPosition(clientID,robot_handle,-1, vrep.simx_opmode_blocking)
-            start_node = graph.Node(position[0],position[1], True)
+            start_node = graph.Node(position[0],position[1], True, 0)
             g.nodes.append(start_node)   
 
             add_known_region() #Add location of robot to known region
@@ -151,13 +154,15 @@ if __name__ == "__main__":
             detection = move_robot(clientID,reversed(optmized_path), True)
 
             # Start pickup
-            if detection:
+            if type (detection) is list:
                 print("now go pick it up")
-                if detection[1] == "blue":
-                    move_to_pickup(clientID, detection)
-                    pickup_object(clientID)
-
+                pickup_object(clientID)
+                move_to_pickup(clientID, detection)
+                grip_object(clientID)
+                if(detection[1] == "red"):
+                    Dijkstra.run_dijkstra(clientID,RED_PLATFORM)
                 else:
-                    move_to_pickup(clientID, detection)
-                    pickup_object(clientID)
-  
+                    Dijkstra.run_dijkstra(clientID, BLUE_PLATFORM)
+                drop_object(clientID)
+                
+

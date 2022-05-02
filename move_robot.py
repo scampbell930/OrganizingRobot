@@ -5,6 +5,7 @@ from time import sleep
 import numpy as np
 import sim as vrep # access all the VREP elements
 from scipy.spatial.transform import Rotation as R
+from datetime import datetime
 
 def move_robot(clientID, coordinates, use_vision: bool):
     err_code,fr_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fr", vrep.simx_opmode_blocking)
@@ -85,6 +86,7 @@ def move_robot(clientID, coordinates, use_vision: bool):
                 sleep(0.05)
                 break
 
+        start_time = datetime.now()
         # Move towards point until robot location == point location
         while True:
             errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)
@@ -105,6 +107,16 @@ def move_robot(clientID, coordinates, use_vision: bool):
                 err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, -1, vrep.simx_opmode_streaming)
                 err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -1, vrep.simx_opmode_streaming)
                 sleep(0.1)
+
+            time_delta = datetime.now() - start_time
+            if time_delta.total_seconds() >= 4:
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, -1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, -1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, -1, vrep.simx_opmode_streaming)
+                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, -1, vrep.simx_opmode_streaming)
+                sleep(0.1)
+                return False
+    return True
 
 
 def move_to_pickup(clientID, detection):
@@ -196,8 +208,8 @@ def move_to_pickup(clientID, detection):
                                                vrep.simx_opmode_streaming)
 
     # Drive to object
-    while not (round(object_position[0], 2) - 0.3 <= round(vision_position[0], 2) <= round(object_position[0], 2) + 0.3 and
-            round(object_position[1], 2) - 0.3 <= round(vision_position[1], 2) <= round(object_position[1], 2) + 0.3):
+    while not (round(object_position[0], 2) - 0.15 <= round(vision_position[0], 2) <= round(object_position[0], 2) + 0.15 and
+            round(object_position[1], 2) - 0.15 <= round(vision_position[1], 2) <= round(object_position[1], 2) + 0.15):
         errcode, vision_position = vrep.simxGetObjectPosition(clientID, vision_handle, -1,
                                                               vrep.simx_opmode_blocking)
 

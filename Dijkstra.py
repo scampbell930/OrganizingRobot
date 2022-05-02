@@ -1,4 +1,5 @@
 import math
+from types import NoneType
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib import collections  as mc
@@ -120,16 +121,8 @@ for l in open('edges.txt', 'r'):
 vrep.simxFinish(-1) # just in case, close all opened connections
 clientID= vrep.simxStart('127.0.0.1',19999,True,True,5000,5) # start a
 
-if clientID != -1:
- err_code,robot_handle = vrep.simxGetObjectHandle(clientID, "/youBot", vrep.simx_opmode_blocking)
- err_code,fr_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fr", vrep.simx_opmode_blocking)
- err_code,fl_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fl", vrep.simx_opmode_blocking)
- err_code,rr_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_rr", vrep.simx_opmode_blocking)
- err_code,rl_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_rl", vrep.simx_opmode_blocking)
- err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
- err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
- err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
- err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
+
+def run_dijkstra(clientID, platform):
 
  g = graph.Graph()
  g.nodes = nodes
@@ -137,12 +130,14 @@ if clientID != -1:
 
  #Define source and destination here
  source = closest_node(nodes)
- destination = 112
+ destination = platform
 
  
  final_node = Dijkstra(g,source,destination) #Returns final node and can trace back to source node from there
  path = []
  path.append(final_node)
+ if(final_node is None):
+     return
  prev_node = final_node.previous_node
 
  print(str(final_node.shortest_distance) + ' ' + '-> Path Length')
@@ -179,4 +174,6 @@ if clientID != -1:
  
 
  plt.show()
- move_robot(clientID,reversed(path),False)
+ success = move_robot(clientID,reversed(path),False)
+ if(not success):
+     run_dijkstra(clientID,platform)
