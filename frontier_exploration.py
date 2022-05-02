@@ -8,6 +8,7 @@ import graph
 from pickup import pickup_object
 
 
+
 #Finds closest node for RRT
 def find_closest_node(point: list[float], nodes: list[graph.Node]) -> graph.Node:
     closest_node = nodes[0]
@@ -92,7 +93,7 @@ def frontier_point_evaluation(paths:list[graph.Node]) -> list[graph.Node]:
 
 if __name__ == "__main__":
     vrep.simxFinish(-1) # just in case, close all opened connections
-    clientID=vrep.simxStart('127.0.0.1',19997,True,True,5000,5)
+    clientID=vrep.simxStart('127.0.0.1',19999,True,True,5000,5)
 
     if clientID != -1:
     
@@ -147,7 +148,7 @@ if __name__ == "__main__":
             
 
             optmized_path = frontier_point_evaluation(paths) #Return optimal path to frontier 
-            detection = move_robot(clientID,reversed(optmized_path))
+            detection = move_robot(clientID,reversed(optmized_path), True)
 
             # Start pickup
             if detection:

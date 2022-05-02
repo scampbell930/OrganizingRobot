@@ -6,7 +6,7 @@ import numpy as np
 import sim as vrep # access all the VREP elements
 from scipy.spatial.transform import Rotation as R
 
-def move_robot(clientID, coordinates):
+def move_robot(clientID, coordinates, use_vision: bool):
     err_code,fr_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fr", vrep.simx_opmode_blocking)
     err_code,fl_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_fl", vrep.simx_opmode_blocking)
     err_code,rr_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_rr", vrep.simx_opmode_blocking)
@@ -18,20 +18,21 @@ def move_robot(clientID, coordinates):
     # Move to each point within the coordinate list
     for coord in coordinates:
         # Check vision sensor for object to detect
-        detection = stream_vision_sensor("Vision_sensor", clientID)
+        if use_vision:
+            detection = stream_vision_sensor("Vision_sensor", clientID)
 
-        if detection:
-            # Detected an object
-            if detection[0]:
-                # Stop moving
-                err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
-                err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
-                err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
-                err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
+            if detection:
+                # Detected an object
+                if detection[0]:
+                    # Stop moving
+                    err_code = vrep.simxSetJointTargetVelocity(clientID, fr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                    err_code = vrep.simxSetJointTargetVelocity(clientID, rr_wheel_handle, 0, vrep.simx_opmode_streaming)
+                    err_code = vrep.simxSetJointTargetVelocity(clientID, fl_wheel_handle, 0, vrep.simx_opmode_streaming)
+                    err_code = vrep.simxSetJointTargetVelocity(clientID, rl_wheel_handle, 0, vrep.simx_opmode_streaming)
 
-                if verify(clientID, "Vision_sensor", [fr_wheel_handle, rr_wheel_handle, fl_wheel_handle, rl_wheel_handle],
+                    if verify(clientID, "Vision_sensor", [fr_wheel_handle, rr_wheel_handle, fl_wheel_handle, rl_wheel_handle],
                           detection):
-                    return [True, detection[1]]
+                        return [True, detection[1]]
 
         err_code = vrep.simxSetObjectPosition(clientID, dummy_handle, -1, [coord.x, coord.y, 0.2],
                                                vrep.simx_opmode_blocking)
@@ -114,7 +115,7 @@ def move_to_pickup(clientID, detection):
     err_code,rl_wheel_handle = vrep.simxGetObjectHandle(clientID, "/youBot/rollingJoint_rl", vrep.simx_opmode_blocking)
     err_code,robot_handle = vrep.simxGetObjectHandle(clientID, "/youBot", vrep.simx_opmode_blocking)
     err_code,vision_handle = vrep.simxGetObjectHandle(clientID, "/youBot/Vision_sensor", vrep.simx_opmode_blocking)
-    err_code,dummy_handle = vrep.simxGetObjectHandle(clientID, "/Cuboid[4]", vrep.simx_opmode_blocking)
+   
     sleep(0.5)
 
     errcode, robot_position = vrep.simxGetObjectPosition(clientID, robot_handle, -1, vrep.simx_opmode_blocking)

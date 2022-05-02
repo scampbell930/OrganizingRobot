@@ -1,7 +1,7 @@
 import sim
 import numpy as np
+import cv2 
 import imutils
-import cv2
 import time
 import os
 
