@@ -95,10 +95,10 @@ def stream_vision_sensor(sensor, clientID):
 
             # If any objects are detected return True
             if len(blue_output) != 0 or len(red_output) != 0:
-                if len(blue_output) != 0:
-                    return [True, "blue"]
-                else:
+                if len(red_output) != 0:
                     return [True, "red"]
+                else:
+                    return [True, "blue"]
             return [False, ""]
 
         elif err == sim.simx_return_novalue_flag:
